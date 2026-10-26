@@ -47,6 +47,7 @@ namespace Setting
         {
             this.enabled = enabled;
             pvm.enabled = enabled;
+            Overview::needsRefresh = true;
         }
 
         bool IsMedalEnabled(int idx)
