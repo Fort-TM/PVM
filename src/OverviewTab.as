@@ -53,6 +53,8 @@ namespace Overview
 
         void Render()
         {
+            if (!Setting::PvmIsEnabled(pvm.GetId())) return;
+
             if (!initialized)
             {
                 Init();

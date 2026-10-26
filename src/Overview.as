@@ -7,6 +7,7 @@ namespace Overview
     bool initialized = false;
 
     bool firstLoad = true;
+    bool needsRefresh = false;
 
     float widthName, widthTime, widthMedal, widthGrade, widthTmxId;
     
@@ -23,7 +24,10 @@ namespace Overview
 
     void Reload()
     {
-        tabs.RemoveRange(0, tabs.Length);
+        if (tabs.Length > 0)
+        {
+            tabs.RemoveRange(0, tabs.Length);
+        }
         Load();
     }
 
@@ -31,8 +35,44 @@ namespace Overview
     {
         for (int i = 0; i < pvms.Length; i++)
         {
+            if (!Setting::PvmIsEnabled(pvms[i].GetId())) continue;
             tabs.InsertLast(OverviewTab(@pvms[i]));
-        }        
+        }
+
+        if (tabs.Length == 0)
+        {
+            activeTab = 0;
+            return;
+        }
+
+        if (activeTab < 0 || activeTab >= tabs.Length)
+        {
+            activeTab = 0;
+        }
+        else if (!Setting::PvmIsEnabled(tabs[activeTab].GetPvm().GetId()))
+        {
+            activeTab = 0;
+        }
+    }
+
+    void ValidateActiveTab()
+    {
+        if (tabs.Length == 0)
+        {
+            activeTab = 0;
+            return;
+        }
+
+        if (activeTab < 0 || activeTab >= tabs.Length)
+        {
+            activeTab = 0;
+            return;
+        }
+
+        if (!Setting::PvmIsEnabled(tabs[activeTab].GetPvm().GetId()))
+        {
+            activeTab = 0;
+        }
     }
 
     void Render()
@@ -40,7 +80,22 @@ namespace Overview
         if (!Setting::overview_show) return;
         if (!initialized) Init();
 
-        if (activeTab >= tabs.Length) activeTab = 0;
+        if (needsRefresh)
+        {
+            Reload();
+            needsRefresh = false;
+        }
+
+        if (tabs.Length == 0)
+        {
+            return;
+        }
+
+        ValidateActiveTab();
+        if (activeTab < 0 || activeTab >= tabs.Length)
+        {
+            activeTab = 0;
+        }
         if (tabs.Length == 0) return;
 
         vec2 size = vec2(800, 600);
@@ -58,6 +113,10 @@ namespace Overview
             for (int i = 0; i < tabs.Length; i++)
             {                
                 OverviewTab@ tab = tabs[i];
+                if (!Setting::PvmIsEnabled(tab.GetPvm().GetId()))
+                {
+                    continue;
+                }
 
                 UI::TabItemFlags flags = UI::TabItemFlags::None;
                 if (firstLoad && activeTab == i)

@@ -47,6 +47,7 @@ namespace Setting
         {
             this.enabled = enabled;
             pvm.enabled = enabled;
+            Overview::needsRefresh = true;
         }
 
         bool IsMedalEnabled(int idx)
@@ -131,11 +132,11 @@ namespace Setting
 
     void FinalizeLoadingPvmSettings()
     {
+        Json::Value obj = Json::Object();
+
         if (_pvmSettingsJson == "{}")
         {
-            Json::Value obj = Json::Object();
-
-            // first load
+            // first load: create default settings for every currently available pvm
             for (int i = 0; i < pvms.Length; i++)
             {
                 string id = pvms[i].Id;
@@ -143,17 +144,26 @@ namespace Setting
                 obj[id] = setting.ToJson();
             }
             _pvmSettingsJson = Json::Write(obj);
+            return;
         }
-        else
+
+        Json::Value saved = Json::Parse(_pvmSettingsJson);
+
+        // Rebuild the persisted settings from the live pvm list and discard stale keys.
+        for (int i = 0; i < pvms.Length; i++)
         {
-            Json::Value obj = Json::Parse(_pvmSettingsJson);
-            for (int i = 0; i < pvms.Length; i++)
+            string id = pvms[i].Id;
+            PerPvmSettings@ setting = GetPvmSettings(id);
+
+            if (saved.HasKey(id))
             {
-                string id = pvms[i].Id;
-                PerPvmSettings@ setting = GetPvmSettings(id);
-                setting.LoadFromJson(obj[id]);
+                setting.LoadFromJson(saved[id]);
             }
+
+            obj[id] = setting.ToJson();
         }
+
+        _pvmSettingsJson = Json::Write(obj);
     }
 
     PerPvmSettings@ GetPvmSettings(string id)
