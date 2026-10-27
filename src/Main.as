@@ -196,11 +196,16 @@ void RenderMenu()
         for (uint i = 0; i < pvms.Length; i++)
         {
             PVM@ pvm = pvms[i];
+            if (!Setting::PvmIsEnabled(pvm.Id)) continue;
             if (UI::BeginMenu(pvm.Name))
             {
                 if (UI::MenuItem(Icons::Eye + " Show " + Utils::CheckIcon(Setting::PvmIsEnabled(pvm.Id))))
                 {
                     Setting::PvmToggleEnabled(pvm.Id);
+                    if (!Setting::PvmIsEnabled(pvm.Id))
+                    {
+                        Overview::needsRefresh = true;
+                    }
                 }
 
                 // todo: add reload
